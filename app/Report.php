@@ -1,0 +1,52 @@
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Report extends Model
+{
+    protected $table = 'report';
+
+    protected $fillable = [
+        'enterprise_id', 'town_id', 'version', 'status', 'comment', 'report_at', 'docs', 'time_status'
+    ];
+
+    public function revisions()
+    {
+        return $this->hasMany(Revision::class, 'report_id')->orderByDesc('version');
+    }
+
+    public function enterprise()
+    {
+        return $this->hasOne(Company::class, 'id', 'enterprise_id');
+    }
+
+    public function town()
+    {
+        return $this->hasOne(TownType::class, 'TownID', 'town_id');
+    }
+
+    public function scopeIndustry($query, $industry)
+    {
+        return $query->whereHas('enterprise', function ($query) use ($industry) {
+            return $query->where('IndustryTableID', $industry);
+        });
+    }
+
+    public function scopeIndustryBetween($query, $min, $max)
+    {
+        return $query->whereHas('enterprise', function ($query) use ($min,$max) {
+            return $query->whereBetween('IndustryTableID', [$min, $max]);
+        });
+    }
+
+    /**
+     * just use at gov statistical
+     */
+    public function enterpry()
+    {
+        return $this->enterprise()
+            ->with('users:EmployeeID,EnterpriseID,OutgoingSituation,IsMedicalObservation,OutgoingDesc,ContactSituation');
+    }
+}
